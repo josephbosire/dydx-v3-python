@@ -34,7 +34,7 @@ async def request(session: aiohttp.ClientSession, uri, method, headers=None, dat
         )
     )
     if not str(response.status).startswith('2'):
-        raise DydxApiError.create(response)
+        raise await DydxApiError.create(response)
 
     if response.content:
         return Response(await response.json(), response.headers)
