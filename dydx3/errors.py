@@ -1,3 +1,6 @@
+import aiohttp
+
+
 class DydxError(Exception):
     """Base error class for all exceptions raised in this library.
     Will never be raised naked; more specific subclasses of this exception will
@@ -6,8 +9,8 @@ class DydxError(Exception):
 
 class DydxApiError(DydxError):
 
-    def __init__(self, response):
-        self.status_code = response.status_code
+    def __init__(self, response: aiohttp.ClientResponse):
+        self.status_code = response.status
         try:
             self.msg = response.json()
         except ValueError:
