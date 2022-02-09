@@ -1,5 +1,6 @@
 import base64
 
+import aiohttp
 from web3 import Web3
 
 from dydx3.constants import OFF_CHAIN_ONBOARDING_ACTION
@@ -18,17 +19,19 @@ class Onboarding(object):
         default_address,
         stark_public_key=None,
         stark_public_key_y_coordinate=None,
+        session: aiohttp.ClientSession=None,
     ):
         self.host = host
         self.default_address = default_address
         self.stark_public_key = stark_public_key
         self.stark_public_key_y_coordinate = stark_public_key_y_coordinate
+        self.session = session
 
         self.signer = SignOnboardingAction(eth_signer, network_id)
 
     # ============ Request Helpers ============
 
-    def _post(
+    async def _post(
         self,
         endpoint,
         data,
@@ -42,7 +45,7 @@ class Onboarding(object):
         )
 
         request_path = '/'.join(['/v3', endpoint])
-        return request(
+        return await request(self.session,
             self.host + request_path,
             'post',
             {
@@ -54,7 +57,7 @@ class Onboarding(object):
 
     # ============ Requests ============
 
-    def create_user(
+    async def create_user(
         self,
         stark_public_key=None,
         stark_public_key_y_coordinate=None,

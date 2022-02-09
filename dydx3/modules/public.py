@@ -1,3 +1,5 @@
+import aiohttp
+
 from dydx3.helpers.request_helpers import generate_query_path
 from dydx3.helpers.requests import request
 
@@ -7,19 +9,21 @@ class Public(object):
     def __init__(
         self,
         host,
+        session: aiohttp.ClientSession,
     ):
         self.host = host
+        self.session = session
 
     # ============ Request Helpers ============
 
-    def _get(self, request_path, params={}):
-        return request(
+    async def _get(self, request_path, params={}):
+        return await request(self.session,
             generate_query_path(self.host + request_path, params),
             'get',
         )
 
-    def _put(self, endpoint, data):
-        return request(
+    async def _put(self, endpoint, data):
+        return await request(self.session,
             self.host + '/v3/' + endpoint,
             'put',
             {},
@@ -28,7 +32,7 @@ class Public(object):
 
     # ============ Requests ============
 
-    def check_if_user_exists(self, ethereum_address):
+    async def check_if_user_exists(self, ethereum_address):
         '''
         Check if user exists
 
@@ -40,12 +44,12 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/v3/users/exists'
-        return self._get(
+        return await self._get(
             uri,
             {'ethereumAddress': ethereum_address},
         )
 
-    def check_if_username_exists(self, username):
+    async def check_if_username_exists(self, username):
         '''
         Check if username exists
 
@@ -57,9 +61,9 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/v3/usernames'
-        return self._get(uri, {'username': username})
+        return await self._get(uri, {'username': username})
 
-    def get_markets(self, market=None):
+    async def get_markets(self, market=None):
         '''
         Get one or more markets
 
@@ -76,9 +80,9 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/v3/markets'
-        return self._get(uri, {'market': market})
+        return await self._get(uri, {'market': market})
 
-    def get_orderbook(self, market):
+    async def get_orderbook(self, market):
         '''
         Get orderbook for a market
 
@@ -96,9 +100,9 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/'.join(['/v3/orderbook', market])
-        return self._get(uri)
+        return await self._get(uri)
 
-    def get_stats(self, market=None, days=None):
+    async def get_stats(self, market=None, days=None):
         '''
         Get one or more day statistics for a market
 
@@ -128,9 +132,9 @@ class Public(object):
             else '/v3/stats'
         )
 
-        return self._get(uri, {'days': days})
+        return await self._get(uri, {'days': days})
 
-    def get_trades(self, market, starting_before_or_at=None):
+    async def get_trades(self, market, starting_before_or_at=None):
         '''
         Get trades for a market
 
@@ -150,12 +154,12 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/'.join(['/v3/trades', market])
-        return self._get(
+        return await self._get(
             uri,
             {'startingBeforeOrAt': starting_before_or_at},
         )
 
-    def get_historical_funding(self, market, effective_before_or_at=None):
+    async def get_historical_funding(self, market, effective_before_or_at=None):
         '''
         Get historical funding for a market
 
@@ -175,12 +179,12 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/'.join(['/v3/historical-funding', market])
-        return self._get(
+        return await self._get(
             uri,
             {'effectiveBeforeOrAt': effective_before_or_at},
         )
 
-    def get_fast_withdrawal(
+    async def get_fast_withdrawal(
         self,
         creditAsset=None,
         creditAmount=None,
@@ -203,7 +207,7 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/v3/fast-withdrawals'
-        return self._get(
+        return await self._get(
             uri,
             {
                 'creditAsset': creditAsset,
@@ -212,7 +216,7 @@ class Public(object):
             },
         )
 
-    def get_candles(
+    async def get_candles(
         self,
         market,
         resolution=None,
@@ -256,7 +260,7 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/'.join(['/v3/candles', market])
-        return self._get(
+        return await self._get(
             uri,
             {
                 'resolution': resolution,
@@ -266,7 +270,7 @@ class Public(object):
             },
         )
 
-    def get_time(self):
+    async def get_time(self):
         '''
         Get api server time as iso and as epoch in seconds with MS
 
@@ -275,9 +279,9 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/v3/time'
-        return self._get(uri)
+        return await self._get(uri)
 
-    def verify_email(
+    async def verify_email(
         self,
         token,
     ):
@@ -291,14 +295,14 @@ class Public(object):
 
         :raises: DydxAPIError
         '''
-        return self._put(
+        return await self._put(
             'emails/verify-email',
             {
                 'token': token,
             }
         )
 
-    def get_public_retroactive_mining_rewards(
+    async def get_public_retroactive_mining_rewards(
         self,
         ethereum_address,
     ):
@@ -312,14 +316,14 @@ class Public(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             '/v3/rewards/public-retroactive-mining',
             {
                 'ethereumAddress': ethereum_address,
             },
         )
 
-    def get_config(self):
+    async def get_config(self):
         '''
         Get global config variables for the exchange as a whole.
         This includes (but is not limited to) details on the exchange,
@@ -329,4 +333,4 @@ class Public(object):
 
         :raises: DydxAPIError
         '''
-        return self._get('/v3/config')
+        return await self._get('/v3/config')

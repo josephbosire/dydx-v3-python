@@ -2,6 +2,8 @@ import hmac
 import hashlib
 import base64
 
+import aiohttp
+
 from dydx3.constants import COLLATERAL_ASSET
 from dydx3.constants import COLLATERAL_TOKEN_DECIMALS
 from dydx3.constants import FACT_REGISTRY_CONTRACT
@@ -32,16 +34,18 @@ class Private(object):
         stark_private_key,
         default_address,
         api_key_credentials,
+        session: aiohttp.ClientSession,
     ):
         self.host = host
         self.network_id = network_id
         self.stark_private_key = stark_private_key
         self.default_address = default_address
         self.api_key_credentials = api_key_credentials
+        self.session = session
 
     # ============ Request Helpers ============
 
-    def _private_request(
+    async def _private_request(
         self,
         method,
         endpoint,
@@ -61,42 +65,43 @@ class Private(object):
             'DYDX-TIMESTAMP': now_iso_string,
             'DYDX-PASSPHRASE': self.api_key_credentials['passphrase'],
         }
-        return request(
+        return await request(
+            self.session,
             self.host + request_path,
             method,
             headers,
             data,
         )
 
-    def _get(self, endpoint, params):
-        return self._private_request(
+    async def _get(self, endpoint, params):
+        return await self._private_request(
             'get',
             generate_query_path(endpoint, params),
         )
 
-    def _post(self, endpoint, data):
-        return self._private_request(
+    async def _post(self, endpoint, data):
+        return await self._private_request(
             'post',
             endpoint,
             data
         )
 
-    def _put(self, endpoint, data):
-        return self._private_request(
+    async def _put(self, endpoint, data):
+        return await self._private_request(
             'put',
             endpoint,
             data
         )
 
-    def _delete(self, endpoint, params):
-        return self._private_request(
+    async def _delete(self, endpoint, params):
+        return await self._private_request(
             'delete',
             generate_query_path(endpoint, params),
         )
 
     # ============ Requests ============
 
-    def get_api_keys(
+    async def get_api_keys(
         self,
     ):
         '''
@@ -106,12 +111,12 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'api-keys',
             {},
         )
 
-    def get_registration(self):
+    async def get_registration(self):
         '''
         Get signature for registration
 
@@ -120,9 +125,9 @@ class Private(object):
         :raises: DydxAPIError
         '''
 
-        return self._get('registration', {})
+        return await self._get('registration', {})
 
-    def get_user(self):
+    async def get_user(self):
         '''
         Get user information
 
@@ -130,9 +135,9 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get('users', {})
+        return await self._get('users', {})
 
-    def update_user(
+    async def update_user(
         self,
         user_data={},
         email=None,
@@ -166,7 +171,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._put(
+        return await self._put(
             'users',
             {
                 'email': email,
@@ -178,7 +183,7 @@ class Private(object):
             },
         )
 
-    def create_account(
+    async def create_account(
         self,
         stark_public_key,
         stark_public_key_y_coordinate,
@@ -196,7 +201,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._post(
+        return await self._post(
             'accounts',
             {
                 'starkKey': stark_public_key,
@@ -204,7 +209,7 @@ class Private(object):
             }
         )
 
-    def get_account(
+    async def get_account(
         self,
         ethereum_address=None,
     ):
@@ -221,12 +226,12 @@ class Private(object):
         address = ethereum_address or self.default_address
         if address is None:
             raise ValueError('ethereum_address was not set')
-        return self._get(
+        return await self._get(
             '/'.join(['accounts', get_account_id(address)]),
             {},
         )
 
-    def get_accounts(
+    async def get_accounts(
         self,
     ):
         '''
@@ -236,12 +241,12 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'accounts',
             {},
         )
 
-    def get_positions(
+    async def get_positions(
         self,
         market=None,
         status=None,
@@ -276,7 +281,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'positions',
             {
                 'market': market,
@@ -286,7 +291,7 @@ class Private(object):
             },
         )
 
-    def get_orders(
+    async def get_orders(
         self,
         market=None,
         status=None,
@@ -343,7 +348,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'orders',
             {
                 'market': market,
@@ -356,7 +361,7 @@ class Private(object):
             },
         )
 
-    def get_active_orders(
+    async def get_active_orders(
         self,
         market,
         side=None,
@@ -386,7 +391,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'active-orders',
             {
                 'market': market,
@@ -395,7 +400,7 @@ class Private(object):
             },
         )
 
-    def get_order_by_id(
+    async def get_order_by_id(
         self,
         order_id,
     ):
@@ -409,12 +414,12 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             '/'.join(['orders', order_id]),
             {},
         )
 
-    def get_order_by_client_id(
+    async def get_order_by_client_id(
         self,
         client_id,
     ):
@@ -428,12 +433,12 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             '/'.join(['orders/client', client_id]),
             {},
         )
 
-    def create_order(
+    async def create_order(
         self,
         position_id,
         market,
@@ -574,12 +579,12 @@ class Private(object):
             'signature': order_signature,
         }
 
-        return self._post(
+        return await self._post(
             'orders',
             order,
         )
 
-    def cancel_order(
+    async def cancel_order(
         self,
         order_id,
     ):
@@ -593,12 +598,12 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._delete(
+        return await self._delete(
             '/'.join(['orders', order_id]),
             {},
         )
 
-    def cancel_all_orders(
+    async def cancel_all_orders(
         self,
         market=None,
     ):
@@ -618,12 +623,12 @@ class Private(object):
         :raises: DydxAPIError
         '''
         params = {'market': market} if market else {}
-        return self._delete(
+        return await self._delete(
             'orders',
             params,
         )
 
-    def cancel_active_orders(
+    async def cancel_active_orders(
         self,
         market,
         side=None,
@@ -653,7 +658,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._delete(
+        return await self._delete(
             'active-orders',
             {
                 'market': market,
@@ -662,7 +667,7 @@ class Private(object):
             },
         )
 
-    def get_fills(
+    async def get_fills(
         self,
         market=None,
         order_id=None,
@@ -693,7 +698,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'fills',
             {
                 'market': market,
@@ -703,7 +708,7 @@ class Private(object):
             }
         )
 
-    def get_transfers(
+    async def get_transfers(
         self,
         transfer_type=None,
         limit=None,
@@ -729,7 +734,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'transfers',
             {
                 'type': transfer_type,
@@ -738,7 +743,7 @@ class Private(object):
             },
         )
 
-    def create_withdrawal(
+    async def create_withdrawal(
         self,
         position_id,
         amount,
@@ -820,9 +825,9 @@ class Private(object):
             'clientId': client_id,
             'signature': signature,
         }
-        return self._post('withdrawals', params)
+        return await self._post('withdrawals', params)
 
-    def create_fast_withdrawal(
+    async def create_fast_withdrawal(
         self,
         position_id,
         credit_asset,
@@ -931,9 +936,9 @@ class Private(object):
             'clientId': client_id,
             'signature': signature,
         }
-        return self._post('fast-withdrawals', params)
+        return await self._post('fast-withdrawals', params)
 
-    def get_funding_payments(
+    async def get_funding_payments(
         self,
         market=None,
         limit=None,
@@ -960,7 +965,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'funding',
             {
                 'market': market,
@@ -969,7 +974,7 @@ class Private(object):
             },
         )
 
-    def get_historical_pnl(
+    async def get_historical_pnl(
         self,
         created_before_or_at=None,
         created_on_or_after=None,
@@ -987,7 +992,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'historical-pnl',
             {
                 'createdBeforeOrAt': created_before_or_at,
@@ -995,7 +1000,7 @@ class Private(object):
             },
         )
 
-    def send_verification_email(
+    async def send_verification_email(
         self,
     ):
         '''
@@ -1005,12 +1010,12 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._put(
+        return await self._put(
             'emails/send-verification-email',
             {},
         )
 
-    def get_trading_rewards(
+    async def get_trading_rewards(
         self,
         epoch=None,
     ):
@@ -1024,14 +1029,14 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'rewards/weight',
             {
                 'epoch': epoch,
             },
         )
 
-    def get_liquidity_provider_rewards(
+    async def get_liquidity_provider_rewards(
         self,
         epoch=None,
     ):
@@ -1045,14 +1050,14 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get(
+        return await self._get(
             'rewards/liquidity',
             {
                 'epoch': epoch,
             },
         )
 
-    def get_retroactive_mining_rewards(
+    async def get_retroactive_mining_rewards(
         self,
     ):
         '''
@@ -1062,9 +1067,9 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get('rewards/retroactive-mining')
+        return await self._get('rewards/retroactive-mining')
 
-    def request_testnet_tokens(
+    async def request_testnet_tokens(
         self,
     ):
         '''
@@ -1078,7 +1083,7 @@ class Private(object):
         if (self.network_id != 3):
             raise ValueError('network_id is not Ropsten')
 
-        return self._post('testnet/tokens', {})
+        return await self._post('testnet/tokens', {})
 
     # ============ Signing ============
 
