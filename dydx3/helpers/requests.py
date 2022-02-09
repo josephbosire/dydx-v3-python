@@ -17,12 +17,18 @@ class DyDxSession():
 
     def __init__(self, session: aiohttp.ClientSession = None):
         self.session = session
+        self.self_created = False
 
     async def get_session(self):
         if self.session is None:
+            self.self_created = True
             connector = aiohttp.TCPConnector(enable_cleanup_closed=True)
             self.session = aiohttp.ClientSession(connector=connector)
         return self.session
+
+    async def close(self):
+        if self.self_created:
+            await self.session.close()
 
 
 class Response(object):
