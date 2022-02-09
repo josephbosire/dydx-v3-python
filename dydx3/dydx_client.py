@@ -4,6 +4,7 @@ import aiohttp
 from dydx3.constants import NETWORK_ID_MAINNET
 from dydx3.eth_signing import SignWithWeb3
 from dydx3.eth_signing import SignWithKey
+from dydx3.helpers.requests import DyDxSession
 from dydx3.modules.eth_private import EthPrivate
 from dydx3.modules.eth import Eth
 from dydx3.modules.private import Private
@@ -39,11 +40,7 @@ class Client(object):
         if host.endswith('/'):
             host = host[:-1]
 
-        if session is None:
-            connector = aiohttp.TCPConnector(enable_cleanup_closed=True)
-            self.session = aiohttp.ClientSession(connector=connector)
-        else:
-            self.session = session
+        self.dydx_session = DyDxSession(session)
         self.host = host
         self.api_timeout = api_timeout
         self.eth_send_options = eth_send_options or {}
@@ -80,7 +77,7 @@ class Client(object):
 
         # Initialize the public module. Other modules are initialized on
         # demand, if the necessary configuration options were provided.
-        self._public = Public(host, self.session)
+        self._public = Public(host, self.dydx_session)
         self._private = None
         self._eth_private = None
         self._eth = None
@@ -146,7 +143,7 @@ class Client(object):
                     stark_private_key=self.stark_private_key,
                     default_address=self.default_address,
                     api_key_credentials=self.api_key_credentials,
-                    session=self.session,
+                    session=self.dydx_session,
                 )
             else:
                 raise Exception(
@@ -194,7 +191,7 @@ class Client(object):
                     stark_public_key_y_coordinate=(
                         self.stark_public_key_y_coordinate
                     ),
-                    session=self.session,
+                    session=self.dydx_session,
                 )
             else:
                 raise Exception(

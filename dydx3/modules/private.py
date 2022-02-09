@@ -17,7 +17,7 @@ from dydx3.helpers.request_helpers import random_client_id
 from dydx3.helpers.request_helpers import iso_to_epoch_seconds
 from dydx3.helpers.request_helpers import json_stringify
 from dydx3.helpers.request_helpers import remove_nones
-from dydx3.helpers.requests import request
+from dydx3.helpers.requests import request, DyDxSession
 from dydx3.starkex.helpers import get_transfer_erc20_fact
 from dydx3.starkex.helpers import nonce_from_client_id
 from dydx3.starkex.order import SignableOrder
@@ -34,14 +34,15 @@ class Private(object):
         stark_private_key,
         default_address,
         api_key_credentials,
-        session: aiohttp.ClientSession,
+        dydx_session: DyDxSession,
+        
     ):
         self.host = host
         self.network_id = network_id
         self.stark_private_key = stark_private_key
         self.default_address = default_address
         self.api_key_credentials = api_key_credentials
-        self.session = session
+        self.dydx_session = dydx_session
 
     # ============ Request Helpers ============
 
@@ -66,7 +67,7 @@ class Private(object):
             'DYDX-PASSPHRASE': self.api_key_credentials['passphrase'],
         }
         return await request(
-            self.session,
+            await self.dydx_session.get_session(),
             self.host + request_path,
             method,
             headers,

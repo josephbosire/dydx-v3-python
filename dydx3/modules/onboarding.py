@@ -6,7 +6,7 @@ from web3 import Web3
 from dydx3.constants import OFF_CHAIN_ONBOARDING_ACTION
 from dydx3.constants import OFF_CHAIN_KEY_DERIVATION_ACTION
 from dydx3.eth_signing import SignOnboardingAction
-from dydx3.helpers.requests import request
+from dydx3.helpers.requests import request, DyDxSession
 
 
 class Onboarding(object):
@@ -19,13 +19,13 @@ class Onboarding(object):
         default_address,
         stark_public_key=None,
         stark_public_key_y_coordinate=None,
-        session: aiohttp.ClientSession=None,
+        dydx_session: DyDxSession=None,
     ):
         self.host = host
         self.default_address = default_address
         self.stark_public_key = stark_public_key
         self.stark_public_key_y_coordinate = stark_public_key_y_coordinate
-        self.session = session
+        self.dydx_session = dydx_session
 
         self.signer = SignOnboardingAction(eth_signer, network_id)
 
@@ -45,7 +45,7 @@ class Onboarding(object):
         )
 
         request_path = '/'.join(['/v3', endpoint])
-        return await request(self.session,
+        return await request(await self.dydx_session.get_session(),
             self.host + request_path,
             'post',
             {

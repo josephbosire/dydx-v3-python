@@ -13,6 +13,18 @@ core_headers = {
 }
 
 
+class DyDxSession():
+
+    def __init__(self, session: aiohttp.ClientSession = None):
+        self.session = session
+
+    async def get_session(self):
+        if self.session is None:
+            connector = aiohttp.TCPConnector(enable_cleanup_closed=True)
+            self.session = aiohttp.ClientSession(connector=connector)
+        return self.session
+
+
 class Response(object):
     def __init__(self, data={}, headers=None):
         self.data = data

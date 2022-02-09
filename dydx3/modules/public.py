@@ -1,7 +1,7 @@
 import aiohttp
 
 from dydx3.helpers.request_helpers import generate_query_path
-from dydx3.helpers.requests import request
+from dydx3.helpers.requests import request, DyDxSession
 
 
 class Public(object):
@@ -9,21 +9,21 @@ class Public(object):
     def __init__(
         self,
         host,
-        session: aiohttp.ClientSession,
+        dydx_session: DyDxSession,
     ):
         self.host = host
-        self.session = session
+        self.dydx_session = dydx_session
 
     # ============ Request Helpers ============
 
     async def _get(self, request_path, params={}):
-        return await request(self.session,
+        return await request(await self.dydx_session.get_session(),
             generate_query_path(self.host + request_path, params),
             'get',
         )
 
     async def _put(self, endpoint, data):
-        return await request(self.session,
+        return await request(await self.dydx_session.get_session(),
             self.host + '/v3/' + endpoint,
             'put',
             {},
