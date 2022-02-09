@@ -1,3 +1,5 @@
+import typing
+
 import aiohttp
 
 
@@ -9,14 +11,24 @@ class DydxError(Exception):
 
 class DydxApiError(DydxError):
 
-    def __init__(self, response: aiohttp.ClientResponse):
-        self.status_code = response.status
+    def __init__(self):
+        self.status_code: typing.Optional[int] = None
+        self.msg = None
+        self.response: aiohttp.ClientResponse = None
+        self.request: aiohttp.ClientRequest = None
+
+    @staticmethod
+    async def create(response: aiohttp.ClientResponse) -> 'DydxApiError':
+        error = DydxApiError()
+        error.status_code = response.status
         try:
-            self.msg = response.json()
+            error.msg = await response.json()
         except ValueError:
-            self.msg = response.text
-        self.response = response
-        self.request = getattr(response, 'request', None)
+            error.msg = await response.text()
+        error.response = response
+        error.request = getattr(response, 'request', None)
+
+        return error
 
     def __str__(self):
         return self.__repr__()
