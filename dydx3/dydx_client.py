@@ -143,7 +143,7 @@ class Client(object):
                     stark_private_key=self.stark_private_key,
                     default_address=self.default_address,
                     api_key_credentials=self.api_key_credentials,
-                    session=self.dydx_session,
+                    dydx_session=self.dydx_session,
                 )
             else:
                 raise Exception(
@@ -191,7 +191,7 @@ class Client(object):
                     stark_public_key_y_coordinate=(
                         self.stark_public_key_y_coordinate
                     ),
-                    session=self.dydx_session,
+                    dydx_session=self.dydx_session,
                 )
             else:
                 raise Exception(
