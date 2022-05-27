@@ -23,6 +23,7 @@ from dydx3.starkex.helpers import nonce_from_client_id
 from dydx3.starkex.order import SignableOrder
 from dydx3.starkex.withdrawal import SignableWithdrawal
 from dydx3.starkex.conditional_transfer import SignableConditionalTransfer
+from dydx3.starkex.transfer import SignableTransfer
 
 
 class Private(object):
@@ -35,7 +36,7 @@ class Private(object):
         default_address,
         api_key_credentials,
         dydx_session: DyDxSession,
-        
+
     ):
         self.host = host
         self.network_id = network_id
@@ -828,6 +829,93 @@ class Private(object):
         }
         return await self._post('withdrawals', params)
 
+    def create_transfer(
+        self,
+        amount,
+        position_id,
+        receiver_account_id,
+        receiver_public_key,
+        receiver_position_id,
+        client_id=None,
+        expiration=None,
+        expiration_epoch_seconds=None,
+        signature=None,
+    ):
+        '''
+        Create a L2 transfer.
+
+        :param amount: required
+        :type amount: str
+
+        :param position_id: required
+        :type position_id: int or str
+
+        :param receiver_account_id: required
+        :type receiver_account_id: str
+
+        :param receiver_public_key: required
+        :type receiver_public_key: str
+
+        :param receiver_position_id: required
+        :type receiver_position_id: int or str
+
+        :param client_id: optional
+        :type client_id: str
+
+        :param expiration: optional
+        :type expiration: ISO str
+
+        :param expiration_epoch_seconds: optional
+        :type expiration_epoch_seconds: int
+
+        :param signature: optional
+        :type signature: str
+
+        :returns: Transfer
+
+        :raises: DydxAPIError
+        '''
+        client_id = client_id or random_client_id()
+
+        if bool(expiration) == bool(expiration_epoch_seconds):
+            raise ValueError(
+                'Exactly one of expiration and expiration_epoch_seconds must '
+                'be specified',
+            )
+        expiration = expiration or epoch_seconds_to_iso(
+            expiration_epoch_seconds,
+        )
+        expiration_epoch_seconds = (
+            expiration_epoch_seconds or iso_to_epoch_seconds(expiration)
+        )
+
+        transfer_signature = signature
+        if not transfer_signature:
+            if not self.stark_private_key:
+                raise Exception(
+                    'No signature provided and client was not'
+                    + 'initialized with stark_private_key'
+                )
+            transfer_to_sign = SignableTransfer(
+                network_id=self.network_id,
+                sender_position_id=int(position_id),
+                receiver_position_id=int(receiver_position_id),
+                receiver_public_key=receiver_public_key,
+                human_amount=amount,
+                client_id=client_id,
+                expiration_epoch_seconds=expiration_epoch_seconds,
+            )
+            transfer_signature = transfer_to_sign.sign(self.stark_private_key)
+
+        params = {
+            'amount': amount,
+            'receiverAccountId': receiver_account_id,
+            'clientId': client_id,
+            'signature': transfer_signature,
+            'expiration': expiration,
+        }
+        return self._post('transfers', params)
+
     async def create_fast_withdrawal(
         self,
         position_id,
@@ -837,6 +925,7 @@ class Private(object):
         to_address,
         lp_position_id,
         lp_stark_public_key,
+        slippage_tolerance=None,
         client_id=None,
         expiration=None,
         expiration_epoch_seconds=None,
@@ -868,6 +957,9 @@ class Private(object):
 
         :param lp_stark_public_key: required
         :type lp_stark_public_key: str
+
+        :param slippage_tolerance: optional
+        :type slippage_tolerance: str
 
         :param client_id: optional
         :type client_id: str
@@ -930,6 +1022,7 @@ class Private(object):
             'creditAsset': credit_asset,
             'creditAmount': credit_amount,
             'debitAmount': debit_amount,
+            'slippageTolerance': slippage_tolerance,
             # TODO: Signature verification should work regardless of case.
             'toAddress': to_address.lower(),
             'lpPositionId': lp_position_id,
@@ -1085,6 +1178,74 @@ class Private(object):
             raise ValueError('network_id is not Ropsten')
 
         return await self._post('testnet/tokens', {})
+
+    def get_profile(
+        self,
+    ):
+        '''
+        Get Private Profile
+
+        :returns: PrivateProfile
+
+        :raises: DydxAPIError
+        '''
+        return self._get('profile/private', {})
+
+    def get_user_links(
+        self,
+    ):
+        '''
+        Get Active Linked Users
+
+        :returns: UserLinks
+
+        :raises: DydxAPIError
+        '''
+        return self._get('users/links', {})
+
+    def send_link_request(
+        self,
+        action,
+        address,
+    ):
+        '''
+        Send Link Request Action
+
+        :param action: required
+        :type action: str in list [
+            "CREATE_SECONDARY_REQUEST",
+            "DELETE_SECONDARY_REQUEST",
+            "ACCEPT_PRIMARY_REQUEST",
+            "REJECT_PRIMARY_REQUEST",
+            "REMOVE",
+        ]
+
+        :param address: required
+        :type address: str
+
+        :returns: {}
+
+        :raises: DydxAPIError
+        '''
+        return self._post(
+            'users/links',
+            {
+                'action': action,
+                'address': address,
+            },
+        )
+
+    def get_user_pending_link_requests(
+        self,
+    ):
+        '''
+        Get Pending Linked User Requests
+
+        :returns: UserLinkRequests
+
+        :raises: DydxAPIError
+        '''
+        return self._get('users/links/requests', {})
 
     # ============ Signing ============
 

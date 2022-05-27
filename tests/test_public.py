@@ -18,7 +18,12 @@ class TestPublic():
     async def test_check_if_user_exists(self):
         public = Client(API_HOST).public
         resp = await public.check_if_user_exists(ADDRESS_1)
-        assert resp.data == {'exists': False}
+        expected_data = {
+            'exists': False,
+            'contractAddress': '',
+            'isProxySigner': False
+        }
+        assert resp.data == expected_data
         assert resp.headers != {}
 
     @pytest.mark.asyncio
