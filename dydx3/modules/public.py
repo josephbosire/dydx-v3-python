@@ -335,7 +335,7 @@ class Public(object):
         '''
         return await self._get('/v3/config')
 
-    def get_insurance_fund_balance(self):
+    async def get_insurance_fund_balance(self):
         '''
         Get the balance of the dYdX insurance fund
 
@@ -343,9 +343,9 @@ class Public(object):
 
         :raises: DydxAPIError
         '''
-        return self._get('/v3/insurance-fund/balance')
+        return await self._get('/v3/insurance-fund/balance')
 
-    def get_profile(
+    async def get_profile(
         self,
         publicId,
     ):
@@ -360,9 +360,9 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/'.join(['/v3/profile', publicId])
-        return self._get(uri)
+        return await self._get(uri)
 
-    def get_historical_leaderboard_pnls(
+    async def get_historical_leaderboard_pnls(
         self,
         period,
         limit=None,
@@ -387,7 +387,7 @@ class Public(object):
         :raises: DydxAPIError
         '''
         uri = '/'.join(['/v3/accounts/historical-leaderboard-pnls', period])
-        return self._get(
+        return await self._get(
             uri,
             {
                 'limit': limit,

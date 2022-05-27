@@ -829,7 +829,7 @@ class Private(object):
         }
         return await self._post('withdrawals', params)
 
-    def create_transfer(
+    async def create_transfer(
         self,
         amount,
         position_id,
@@ -914,7 +914,7 @@ class Private(object):
             'signature': transfer_signature,
             'expiration': expiration,
         }
-        return self._post('transfers', params)
+        return await self._post('transfers', params)
 
     async def create_fast_withdrawal(
         self,
@@ -1179,7 +1179,7 @@ class Private(object):
 
         return await self._post('testnet/tokens', {})
 
-    def get_profile(
+    async def get_profile(
         self,
     ):
         '''
@@ -1189,9 +1189,9 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get('profile/private', {})
+        return await self._get('profile/private', {})
 
-    def get_user_links(
+    async def get_user_links(
         self,
     ):
         '''
@@ -1201,9 +1201,9 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get('users/links', {})
+        return await self._get('users/links', {})
 
-    def send_link_request(
+    async def send_link_request(
         self,
         action,
         address,
@@ -1227,7 +1227,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._post(
+        return await self._post(
             'users/links',
             {
                 'action': action,
@@ -1235,7 +1235,7 @@ class Private(object):
             },
         )
 
-    def get_user_pending_link_requests(
+    async def get_user_pending_link_requests(
         self,
     ):
         '''
@@ -1245,7 +1245,7 @@ class Private(object):
 
         :raises: DydxAPIError
         '''
-        return self._get('users/links/requests', {})
+        return await self._get('users/links/requests', {})
 
     # ============ Signing ============
 
