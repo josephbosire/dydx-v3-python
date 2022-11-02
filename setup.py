@@ -6,7 +6,7 @@ REQUIREMENTS = [
     'dateparser>=1.0.0',
     'ecdsa>=0.16.0',
     'eth_keys',
-    'eth-account>=0.4.0,<0.6.0',
+    'eth-account>=0.4.0,<=0.7.0',  # TODO: This was <0.6.0, and I don't know why
     'mpmath>=1.0.0',
     'requests-mock==1.6.0',
     'requests>=2.22.0,<3.0.0',
